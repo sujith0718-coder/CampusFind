@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { FormField } from '../components/FormField';
 import { FileUpload } from '../components/FileUpload';
 import { Button } from '../components/Button';
@@ -7,7 +7,17 @@ import { ErrorMessage } from '../components/ErrorMessage';
 import { WhatHappensNext } from '../components/WhatHappensNext';
 import { FormSectionIndicator } from '../components/FormSectionIndicator';
 import { submitLostReport } from '../api/apiClient';
-import { User, Package, Calendar, Camera, Send, ArrowLeft } from 'lucide-react';
+import {
+  User,
+  Package,
+  Calendar,
+  Camera,
+  Send,
+  ArrowLeft,
+  ShieldCheck,
+  AlertCircle,
+  HelpCircle,
+} from 'lucide-react';
 
 const CATEGORY_OPTIONS = [
   'Electronics',
@@ -20,7 +30,7 @@ const CATEGORY_OPTIONS = [
   'Other',
 ];
 
-const FORM_STEPS = ['Your Details', 'Item Details', 'When & Where', 'Item Photo'];
+const FORM_STEPS = ['Reporter Info', 'Item Details', 'Location & Time', 'Item Photo'];
 
 export function LostReportPage() {
   const navigate = useNavigate();
@@ -61,7 +71,7 @@ export function LostReportPage() {
     }
 
     if (!formData.studentRollNumber.trim()) {
-      newErrors.studentRollNumber = 'Roll number is required.';
+      newErrors.studentRollNumber = 'Roll number or student ID is required.';
     }
 
     if (!formData.studentEmail.trim()) {
@@ -74,7 +84,7 @@ export function LostReportPage() {
     }
 
     if (!formData.studentPhone.trim()) {
-      newErrors.studentPhone = 'Phone number is required.';
+      newErrors.studentPhone = 'Contact phone number is required.';
     }
 
     if (!formData.itemName.trim()) {
@@ -86,7 +96,7 @@ export function LostReportPage() {
     }
 
     if (!formData.itemCharacteristics.trim()) {
-      newErrors.itemCharacteristics = 'Characteristics/description is required.';
+      newErrors.itemCharacteristics = 'Distinct characteristics or serial details are required.';
     }
 
     if (!formData.approxLostTime) {
@@ -94,7 +104,7 @@ export function LostReportPage() {
     }
 
     if (!formData.approxLostLocation.trim()) {
-      newErrors.approxLostLocation = 'Approximate location of loss is required.';
+      newErrors.approxLostLocation = 'Approximate campus location is required.';
     }
 
     setErrors(newErrors);
@@ -107,6 +117,8 @@ export function LostReportPage() {
     setServerError('');
 
     if (!validateForm()) {
+      // Scroll to first error smoothly
+      window.scrollTo({ top: 180, behavior: 'smooth' });
       return;
     }
 
@@ -118,211 +130,276 @@ export function LostReportPage() {
         itemImage,
       });
 
+      // Navigate to success page with exact required confirmation message
       navigate('/success', {
         state: {
-          message: 'Your report has been successfully received.',
           type: 'lost',
+          message: 'Your report has been successfully received.',
         },
       });
     } catch (err) {
       setIsSubmitting(false);
-      if (err.response && err.response.status === 400) {
-        const backendMsg = err.response.data?.message || err.response.data?.error;
-        setServerError(backendMsg || 'Invalid report data provided. Please check all fields and try again.');
+      if (err.response?.data?.message) {
+        setServerError(err.response.data.message);
       } else {
-        setServerError('Unable to submit your report right now due to a network error. Please try again later.');
+        setServerError('An unexpected network error occurred while submitting your report. Please verify your connection and try again.');
       }
+      window.scrollTo({ top: 100, behavior: 'smooth' });
     }
   };
 
-  return (
-    <div className="card">
-      <div className="form-header">
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={() => navigate('/')}
-          style={{ marginBottom: '1rem', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-        >
-          <ArrowLeft size={16} />
-          <span>Back to Home</span>
-        </button>
-        <h1 className="form-title">Report a Lost Item</h1>
-        <p className="form-subtitle">
-          Fill out the details below to submit a lost item report. All fields are required except item image.
-        </p>
+  const errorKeys = Object.keys(errors).filter((k) => !!errors[k]);
 
-        {/* Section Navigation Indicator */}
-        <FormSectionIndicator steps={FORM_STEPS} />
+  return (
+    <div className="form-page-container animate-fade-in">
+      <div className="form-navigation-row">
+        <Link to="/" className="back-link-btn" aria-label="Return to Portal Home">
+          <ArrowLeft size={16} aria-hidden="true" />
+          <span>Return to Portal Home</span>
+        </Link>
+        <div className="confidential-pill" title="Only authorized staff can access this report">
+          <ShieldCheck size={14} aria-hidden="true" />
+          <span>Confidential Submission</span>
+        </div>
       </div>
 
-      <ErrorMessage message={serverError} />
-
-      <form onSubmit={handleSubmit} noValidate>
-        {/* Section 1: Your Details */}
-        <section className="form-section">
-          <h2 className="section-title">
-            <User size={18} color="#2563eb" />
-            <span>Your Details</span>
-          </h2>
-          <div className="form-grid form-grid-2">
-            <FormField
-              id="studentName"
-              label="Student Full Name"
-              value={formData.studentName}
-              onChange={handleChange}
-              error={errors.studentName}
-              placeholder="e.g. Rahul Sharma"
-              required
-              disabled={isSubmitting}
-            />
-            <FormField
-              id="studentRollNumber"
-              label="Roll Number / Student ID"
-              value={formData.studentRollNumber}
-              onChange={handleChange}
-              error={errors.studentRollNumber}
-              placeholder="e.g. 21CS045"
-              required
-              disabled={isSubmitting}
-            />
-            <FormField
-              id="studentEmail"
-              label="Student Email Address"
-              type="email"
-              value={formData.studentEmail}
-              onChange={handleChange}
-              error={errors.studentEmail}
-              placeholder="e.g. student@college.edu"
-              required
-              disabled={isSubmitting}
-            />
-            <FormField
-              id="studentPhone"
-              label="Phone Number"
-              type="tel"
-              value={formData.studentPhone}
-              onChange={handleChange}
-              error={errors.studentPhone}
-              placeholder="e.g. 9876543210"
-              required
-              disabled={isSubmitting}
-            />
+      <div className="card form-main-card">
+        {/* Form Header */}
+        <header className="form-header">
+          <div className="form-badge-row">
+            <span className="form-type-badge form-type-lost">
+              LOST ITEM REPORT
+            </span>
           </div>
-        </section>
+          <h1 className="form-title">Report a Lost Belonging</h1>
+          <p className="form-subtitle">
+            Provide descriptive characteristics so campus administration can accurately correlate your report with physical items in custody. Submissions are never published publicly.
+          </p>
 
-        {/* Section 2: Item Details */}
-        <section className="form-section">
-          <h2 className="section-title">
-            <Package size={18} color="#2563eb" />
-            <span>Item Details</span>
-          </h2>
-          <div className="form-grid">
+          <FormSectionIndicator steps={FORM_STEPS} />
+        </header>
+
+        {/* Server error banner */}
+        <ErrorMessage message={serverError} />
+
+        {/* Accessible Error Summary if multiple validation errors occur */}
+        {errorKeys.length > 0 && (
+          <div className="error-summary-box animate-fade-in" role="alert" aria-labelledby="error-summary-heading">
+            <div className="error-summary-header">
+              <AlertCircle size={18} aria-hidden="true" />
+              <h2 id="error-summary-heading" className="error-summary-title">
+                Please correct the {errorKeys.length} error{errorKeys.length > 1 ? 's' : ''} below to proceed:
+              </h2>
+            </div>
+            <ul className="error-summary-list">
+              {errorKeys.map((key) => (
+                <li key={key}>
+                  <a href={`#${key}`} className="error-summary-anchor">
+                    {errors[key]}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} noValidate>
+          {/* Section 1: Student Information */}
+          <section className="form-section" aria-labelledby="section-student-info">
+            <div className="section-title" id="section-student-info">
+              <div className="section-icon-badge badge-indigo" aria-hidden="true">
+                <User size={18} />
+              </div>
+              <span>1. Student &amp; Contact Information</span>
+            </div>
+            <p className="section-help-text">
+              We only use your contact details to reach you in person when a verified match is confirmed.
+            </p>
+
+            <div className="form-grid form-grid-2">
+              <FormField
+                id="studentName"
+                label="Full Student Name"
+                value={formData.studentName}
+                onChange={handleChange}
+                error={errors.studentName}
+                required
+                placeholder="e.g. Sujith Kumar"
+                autoComplete="name"
+                disabled={isSubmitting}
+              />
+              <FormField
+                id="studentRollNumber"
+                label="Roll Number / Student ID"
+                value={formData.studentRollNumber}
+                onChange={handleChange}
+                error={errors.studentRollNumber}
+                required
+                placeholder="e.g. 21CS104"
+                disabled={isSubmitting}
+              />
+              <FormField
+                id="studentEmail"
+                label="University / Contact Email"
+                type="email"
+                value={formData.studentEmail}
+                onChange={handleChange}
+                error={errors.studentEmail}
+                required
+                placeholder="student@campus.edu"
+                autoComplete="email"
+                disabled={isSubmitting}
+              />
+              <FormField
+                id="studentPhone"
+                label="Phone Number"
+                type="tel"
+                value={formData.studentPhone}
+                onChange={handleChange}
+                error={errors.studentPhone}
+                required
+                placeholder="e.g. +91 98765 43210"
+                autoComplete="tel"
+                disabled={isSubmitting}
+              />
+            </div>
+          </section>
+
+          {/* Section 2: Item Information */}
+          <section className="form-section" aria-labelledby="section-item-info">
+            <div className="section-title" id="section-item-info">
+              <div className="section-icon-badge badge-amber" aria-hidden="true">
+                <Package size={18} />
+              </div>
+              <span>2. Lost Item Description</span>
+            </div>
+            <p className="section-help-text">
+              Include specific brand names, colors, case models, or stickers to help administrators distinguish your item.
+            </p>
+
             <div className="form-grid form-grid-2">
               <FormField
                 id="itemName"
-                label="Item Name"
+                label="Item Name / Title"
                 value={formData.itemName}
                 onChange={handleChange}
                 error={errors.itemName}
-                placeholder="e.g. Blue HP Laptop Charger"
                 required
+                placeholder="e.g. Navy Blue HP Laptop Backpack"
                 disabled={isSubmitting}
               />
               <FormField
                 id="itemCategory"
                 label="Category"
                 type="select"
-                options={CATEGORY_OPTIONS}
                 value={formData.itemCategory}
                 onChange={handleChange}
                 error={errors.itemCategory}
-                placeholder="Select category..."
                 required
+                options={CATEGORY_OPTIONS}
+                placeholder="Select category..."
                 disabled={isSubmitting}
               />
             </div>
 
-            <FormField
-              id="itemCharacteristics"
-              label="Detailed Characteristics & Identification Marks"
-              type="textarea"
-              value={formData.itemCharacteristics}
-              onChange={handleChange}
-              error={errors.itemCharacteristics}
-              placeholder="Describe color, brand, distinct scratches, contents, serial numbers, or stickers..."
-              rows={3}
-              required
+            <div style={{ marginTop: '1.25rem' }}>
+              <FormField
+                id="itemCharacteristics"
+                label="Distinct Characteristics &amp; Identifiers"
+                type="textarea"
+                rows={3}
+                value={formData.itemCharacteristics}
+                onChange={handleChange}
+                error={errors.itemCharacteristics}
+                required
+                placeholder="Mention any noticeable scratches, keychains, stickers, passcode cues, or inside contents that prove ownership."
+                helpText="Detailed distinguishing marks help campus staff verify rightful ownership quickly."
+                disabled={isSubmitting}
+              />
+            </div>
+          </section>
+
+          {/* Section 3: Time & Location */}
+          <section className="form-section" aria-labelledby="section-time-location">
+            <div className="section-title" id="section-time-location">
+              <div className="section-icon-badge badge-cyan" aria-hidden="true">
+                <Calendar size={18} />
+              </div>
+              <span>3. Approximate Time &amp; Location</span>
+            </div>
+            <p className="section-help-text">
+              Where and when did you last see or notice the item missing?
+            </p>
+
+            <div className="form-grid form-grid-2">
+              <FormField
+                id="approxLostTime"
+                label="Approximate Date &amp; Time"
+                type="datetime-local"
+                value={formData.approxLostTime}
+                onChange={handleChange}
+                error={errors.approxLostTime}
+                required
+                disabled={isSubmitting}
+              />
+              <FormField
+                id="approxLostLocation"
+                label="Approximate Campus Location"
+                value={formData.approxLostLocation}
+                onChange={handleChange}
+                error={errors.approxLostLocation}
+                required
+                placeholder="e.g. Central Library, 2nd Floor Reading Hall"
+                disabled={isSubmitting}
+              />
+            </div>
+          </section>
+
+          {/* Section 4: Optional Photo Upload */}
+          <section className="form-section" aria-labelledby="section-photo-upload">
+            <div className="section-title" id="section-photo-upload">
+              <div className="section-icon-badge badge-violet" aria-hidden="true">
+                <Camera size={18} />
+              </div>
+              <span>4. Reference Photo (Optional)</span>
+            </div>
+            <p className="section-help-text">
+              If you have a past photo of your item, attach it here. This photo will only be viewed by administrators for visual matching.
+            </p>
+
+            <FileUpload
+              id="itemImage"
+              label="Item Reference Photo"
+              file={itemImage}
+              onChange={(file) => setItemImage(file)}
+              onRemove={() => setItemImage(null)}
+              error={errors.itemImage}
               disabled={isSubmitting}
+              helpText="PNG, JPEG, WebP up to 5MB. Stored securely and deleted upon resolution."
             />
+          </section>
+
+          {/* Educational reassurance callout */}
+          <WhatHappensNext />
+
+          {/* Form Actions */}
+          <div className="form-submit-row">
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isSubmitting}
+              disabled={isSubmitting}
+              icon={Send}
+              className="btn-submit-large"
+            >
+              Submit Confidential Lost Report
+            </Button>
+            <p className="form-submit-disclaimer">
+              By submitting, your report is securely stored for administrative correlation only.
+            </p>
           </div>
-        </section>
-
-        {/* Section 3: When & Where */}
-        <section className="form-section">
-          <h2 className="section-title">
-            <Calendar size={18} color="#2563eb" />
-            <span>When &amp; Where</span>
-          </h2>
-          <div className="form-grid form-grid-2">
-            <FormField
-              id="approxLostTime"
-              label="Approximate Time of Loss"
-              type="datetime-local"
-              value={formData.approxLostTime}
-              onChange={handleChange}
-              error={errors.approxLostTime}
-              required
-              disabled={isSubmitting}
-            />
-            <FormField
-              id="approxLostLocation"
-              label="Approximate Location of Loss"
-              value={formData.approxLostLocation}
-              onChange={handleChange}
-              error={errors.approxLostLocation}
-              placeholder="e.g. Central Library 2nd Floor, Seminar Hall B"
-              required
-              disabled={isSubmitting}
-            />
-          </div>
-        </section>
-
-        {/* Section 4: Item Photo */}
-        <section className="form-section">
-          <h2 className="section-title">
-            <Camera size={18} color="#2563eb" />
-            <span>Item Photo</span>
-          </h2>
-          <FileUpload
-            id="itemImage"
-            label="Item Image (Optional)"
-            file={itemImage}
-            onChange={(file) => setItemImage(file)}
-            onRemove={() => setItemImage(null)}
-            error={errors.itemImage}
-            required={false}
-            helpText="Upload a photo of the item or similar reference image if available"
-            disabled={isSubmitting}
-          />
-        </section>
-
-        {/* What Happens Next Information Panel */}
-        <WhatHappensNext />
-
-        {/* Action Button */}
-        <div style={{ marginTop: '2rem' }}>
-          <Button
-            type="submit"
-            variant="primary"
-            fullWidth
-            loading={isSubmitting}
-            icon={Send}
-          >
-            Submit Lost Report
-          </Button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

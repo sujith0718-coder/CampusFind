@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { UploadCloud, X, RefreshCw, CheckCircle, AlertCircle, FileImage } from 'lucide-react';
+import { UploadCloud, X, RefreshCw, CheckCircle2, AlertCircle, FileImage, ShieldAlert } from 'lucide-react';
 
 export function FileUpload({
   id,
@@ -10,11 +10,12 @@ export function FileUpload({
   error,
   required = false,
   accept = 'image/*',
-  helpText = 'PNG, JPG, JPEG up to 5MB',
+  helpText = 'PNG, JPEG, WebP up to 5MB',
   disabled = false,
 }) {
   const inputRef = useRef(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   // Generate and manage thumbnail object URL
   useEffect(() => {
@@ -42,6 +43,24 @@ export function FileUpload({
     }
   };
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (!disabled) setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (!disabled && e.dataTransfer.files && e.dataTransfer.files[0]) {
+      onChange(e.dataTransfer.files[0]);
+    }
+  };
+
   const handleRemove = (e) => {
     if (e) e.stopPropagation();
     if (inputRef.current) inputRef.current.value = '';
@@ -58,17 +77,25 @@ export function FileUpload({
   };
 
   return (
-    <div className="form-group">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div className={`form-group ${error ? 'has-form-error' : ''}`}>
+      <div className="label-row">
         <label className="form-label" htmlFor={id}>
           {label}
-          {required && <span className="required-star" aria-hidden="true">*</span>}
+          {required && (
+            <span className="required-star" aria-hidden="true" title="Required field">
+              *
+            </span>
+          )}
         </label>
-        {file && (
+        {file ? (
           <span className="file-status-badge">
-            <CheckCircle size={12} />
-            <span>Image Selected</span>
+            <CheckCircle2 size={13} aria-hidden="true" />
+            <span>Ready for Upload</span>
           </span>
+        ) : required ? (
+          <span className="field-required-hint" aria-hidden="true">Required</span>
+        ) : (
+          <span className="field-optional-hint" aria-hidden="true">Optional</span>
         )}
       </div>
 
@@ -81,14 +108,19 @@ export function FileUpload({
         onChange={handleFileChange}
         disabled={disabled}
         style={{ display: 'none' }}
+        aria-describedby={error ? `${id}-error` : undefined}
       />
 
       {!file ? (
         <div
-          className={`file-upload-box ${error ? 'has-error' : ''}`}
+          className={`file-upload-box ${error ? 'has-error' : ''} ${isDragOver ? 'is-drag-over' : ''}`}
           onClick={handleBoxClick}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           role="button"
           tabIndex={0}
+          aria-label={`${label}. Click or drag image file here.`}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
@@ -96,33 +128,35 @@ export function FileUpload({
             }
           }}
         >
-          <UploadCloud className="file-upload-icon" size={32} />
-          <p className="file-upload-label">
-            Click to select or drag image file
-          </p>
-          <p className="file-upload-hint">{helpText}</p>
+          <div className="upload-icon-container" aria-hidden="true">
+            <UploadCloud size={30} strokeWidth={2.2} />
+          </div>
+          <div className="upload-cta-text">
+            <span className="upload-action-primary">Choose a photo</span> or drag and drop
+          </div>
+          <p className="upload-constraints-text">{helpText}</p>
         </div>
       ) : (
-        <div className="file-preview-card">
+        <div className="file-preview-card animate-scale-up">
           <div className="file-preview-content">
             {previewUrl ? (
               <img
                 src={previewUrl}
-                alt="Selected preview"
+                alt="Selected item photo preview"
                 className="file-preview-thumbnail"
               />
             ) : (
-              <div className="file-preview-icon-placeholder">
-                <FileImage size={24} color="#2563eb" />
+              <div className="file-preview-icon-placeholder" aria-hidden="true">
+                <FileImage size={28} />
               </div>
             )}
-            
+
             <div className="file-preview-details">
               <span className="file-preview-filename" title={file.name}>
                 {file.name}
               </span>
               <span className="file-preview-size">
-                {formatFileSize(file.size)}
+                {formatFileSize(file.size)} &bull; Ready for upload
               </span>
             </div>
           </div>
@@ -133,17 +167,19 @@ export function FileUpload({
               className="btn btn-secondary btn-sm"
               onClick={handleBoxClick}
               disabled={disabled}
+              aria-label="Change selected file"
             >
-              <RefreshCw size={14} />
-              <span>Change Image</span>
+              <RefreshCw size={13} aria-hidden="true" />
+              <span>Change</span>
             </button>
             <button
               type="button"
               className="btn btn-danger-link btn-sm"
               onClick={handleRemove}
               disabled={disabled}
+              aria-label="Remove selected file"
             >
-              <X size={14} />
+              <X size={14} aria-hidden="true" />
               <span>Remove</span>
             </button>
           </div>
@@ -151,8 +187,8 @@ export function FileUpload({
       )}
 
       {error && (
-        <div id={`${id}-error`} className="error-text" role="alert" style={{ marginTop: '0.35rem' }}>
-          <AlertCircle size={14} />
+        <div id={`${id}-error`} className="error-text" role="alert" style={{ marginTop: '0.4rem' }}>
+          <AlertCircle size={14} aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}
