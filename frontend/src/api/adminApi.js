@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const TOKEN_KEY = 'campus_find_admin_token';
-const baseURL = import.meta.env.VITE_API_BASE_URL || '';
+const baseURL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
 
 /**
  * Shared authenticated Axios instance for Admin endpoints
