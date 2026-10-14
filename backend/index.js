@@ -8,7 +8,31 @@ const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 
-app.use(cors());
+// Allowed origins: Production frontend on Vercel and local development
+const allowedOrigins = [
+  'https://campusfind-frontend-one.vercel.app',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
+];
+
+// Configure CORS origin whitelist, allowing requests without origin (e.g. curl, Postman, server-to-server)
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    // Return false without throwing an internal Error object to reject cleanly without HTTP 500
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 // Mount Routes

@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 
-// Ensure secure local uploads directory exists
-const uploadDir = path.join(__dirname, '..', 'uploads');
+// Support configurable persistent disk mount path (e.g. Render Persistent Disk) or local fallback
+const uploadDir = process.env.UPLOAD_DIR ? path.resolve(process.env.UPLOAD_DIR) : path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
