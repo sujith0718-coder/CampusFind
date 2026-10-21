@@ -5,8 +5,8 @@ Campus Find is a privacy-first campus lost-item reporting and query portal.
 ## Monorepo Architecture
 
 - `frontend/` — React.js Public Portal (Sujith)
-- `backend/` — Core Express REST APIs (Gurusridhara)
-- `admin/` — Admin Dashboard & API (Jeevan Mishael)
+- `backend/` — Core Express REST APIs 
+- `admin/` — Admin Dashboard & API
 
 ## Core Privacy Constraint
 
