@@ -171,7 +171,7 @@ export function AdminDashboardPage() {
       const res = await resolveMatch(payload);
 
       // Successfully resolved
-      setActionSuccess(res.data?.message || 'Match confirmed. Sensitive data purged. Audit log created.');
+      setActionSuccess(res?.message || res?.data?.message || 'Match confirmed. Sensitive data purged. Audit log created.');
 
       // Clear selection and close dialog
       setSelectedLostId(null);
@@ -434,7 +434,10 @@ export function AdminDashboardPage() {
               <Button
                 variant="primary"
                 disabled={!selectedLost || !selectedFound}
-                onClick={() => setIsConfirmingResolve(true)}
+                onClick={() => {
+                  setActionError('');
+                  setIsConfirmingResolve(true);
+                }}
                 icon={CheckCircle2}
                 className="btn-resolve-trigger"
                 aria-label="Open match comparison and resolution modal"
@@ -686,6 +689,24 @@ export function AdminDashboardPage() {
             <p className="modal-lead-desc">
               Please verify all characteristics below. When you confirm this resolution, both records and their uploaded media files will be <strong>permanently deleted</strong> from disk and database to protect student privacy.
             </p>
+
+            {actionError && (
+              <div className="alert-box alert-danger animate-fade-in" role="alert" style={{ marginBottom: '1.25rem' }}>
+                <AlertTriangle size={18} className="alert-icon" aria-hidden="true" />
+                <div className="alert-content">
+                  <strong>Operation Failed: </strong>
+                  <span>{actionError}</span>
+                </div>
+                <button
+                  type="button"
+                  className="alert-close-btn"
+                  onClick={() => setActionError('')}
+                  aria-label="Dismiss alert"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
 
             {/* Side-by-Side Detailed Comparison Grid */}
             <div className="modal-comparison-grid">

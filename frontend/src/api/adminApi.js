@@ -116,13 +116,32 @@ export async function getPendingFoundQueries() {
 /**
  * Resolve Match
  * POST /api/admin/resolve
+ * Supports both:
+ *   resolveMatch({ lostReportId, foundQueryId, resolvedCategory })
+ * and
+ *   resolveMatch(lostReportId, foundQueryId, resolvedCategory)
  */
-export async function resolveMatch(lostReportId, foundQueryId, resolvedCategory) {
-  const response = await adminApiClient.post('/api/admin/resolve', {
-    lostReportId,
-    foundQueryId,
-    resolvedCategory,
-  });
+export async function resolveMatch(lostReportIdOrPayload, foundQueryId, resolvedCategory) {
+  let body;
+  if (
+    lostReportIdOrPayload &&
+    typeof lostReportIdOrPayload === 'object' &&
+    !Array.isArray(lostReportIdOrPayload)
+  ) {
+    body = {
+      lostReportId: lostReportIdOrPayload.lostReportId,
+      foundQueryId: lostReportIdOrPayload.foundQueryId,
+      resolvedCategory: lostReportIdOrPayload.resolvedCategory,
+    };
+  } else {
+    body = {
+      lostReportId: lostReportIdOrPayload,
+      foundQueryId,
+      resolvedCategory,
+    };
+  }
+
+  const response = await adminApiClient.post('/api/admin/resolve', body);
   return response.data;
 }
 

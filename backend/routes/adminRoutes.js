@@ -158,15 +158,36 @@ router.get('/metrics', verifyAdminToken, async (req, res) => {
  *    }
  */
 router.post('/resolve', verifyAdminToken, async (req, res) => {
-  const { lostReportId, foundQueryId, resolvedCategory } = req.body || {};
+  let { lostReportId, foundQueryId, resolvedCategory } = req.body || {};
+
+  // Defensive fallback: if payload was inadvertently nested (e.g. { lostReportId: { lostReportId, foundQueryId, resolvedCategory } })
+  if (lostReportId && typeof lostReportId === 'object') {
+    foundQueryId = foundQueryId || lostReportId.foundQueryId;
+    resolvedCategory = resolvedCategory || lostReportId.resolvedCategory;
+    lostReportId = lostReportId.lostReportId;
+  }
 
   // 1. Validate body fields
-  if (!lostReportId || !foundQueryId || !resolvedCategory) {
+  if (
+    !lostReportId ||
+    !foundQueryId ||
+    !resolvedCategory ||
+    typeof lostReportId !== 'string' ||
+    typeof foundQueryId !== 'string' ||
+    typeof resolvedCategory !== 'string' ||
+    !lostReportId.trim() ||
+    !foundQueryId.trim() ||
+    !resolvedCategory.trim()
+  ) {
     return res.status(400).json({
       status: 'fail',
       message: 'Missing required resolution fields: lostReportId, foundQueryId, and resolvedCategory are all required.'
     });
   }
+
+  lostReportId = lostReportId.trim();
+  foundQueryId = foundQueryId.trim();
+  resolvedCategory = resolvedCategory.trim();
 
   // Validate ObjectId format
   if (!mongoose.Types.ObjectId.isValid(lostReportId) || !mongoose.Types.ObjectId.isValid(foundQueryId)) {
